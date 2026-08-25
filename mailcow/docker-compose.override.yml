@@ -1,0 +1,43 @@
+# vspam-agent overlay for mailcow-dockerized.
+#
+# Install:
+#   1. Copy this file into your mailcow-dockerized directory. If you already
+#      have a docker-compose.override.yml, merge the two service blocks rather
+#      than replacing your file.
+#   2. Add VSPAM_API_KEY=vspam_your_key to mailcow.conf
+#      (get a key at https://vspam.org/account — free).
+#   3. docker compose up -d
+#   4. Wire Rspamd to it — see rspamd/vspam.conf in this directory.
+#
+# The agent never touches mailcow's own containers. It joins the network,
+# answers checks on 10046, and mailcow's Rspamd decides what to do with the
+# answer. Removing the override and restarting fully reverts the change.
+
+services:
+  vspam-agent:
+    image: ghcr.io/vspam-org/vspam-agent:latest
+    container_name: vspam-agent-mailcow
+    restart: always
+    environment:
+      # Empty is valid: the agent falls back to public endpoints, at lower rate
+      # limits and without submitting what this server sees back to the pool.
+      - VSPAM_API_KEY=${VSPAM_API_KEY:-}
+      - VSPAM_HTTP_ENABLED=true
+      - VSPAM_HTTP_LISTEN=0.0.0.0:10046
+      - VSPAM_LISTEN=tcp://0.0.0.0:10045
+      - VSPAM_LOG_LEVEL=info
+    volumes:
+      # Named volume, not a bind mount: the image runs as uid 65532 and a host
+      # directory would arrive root-owned, leaving the cache unopenable.
+      - vspam-cache-vol:/var/lib/vspam
+    networks:
+      # mailcow prefixes networks with COMPOSE_PROJECT_NAME; `mailcow-network`
+      # is the name mailcow defines, so the agent lands beside Rspamd.
+      mailcow-network:
+        aliases:
+          - vspam-agent
+    # Deliberately no `ports:` — nothing here should be reachable from outside
+    # the compose network. Rspamd reaches it by service alias.
+
+volumes:
+  vspam-cache-vol:
