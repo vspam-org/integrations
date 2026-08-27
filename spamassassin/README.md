@@ -33,33 +33,33 @@ Amavis, `spamd`, `spamass-milter` and rspamd-free mailcow all read
 
 ### Subscribe to the channel
 
-> **Not serving yet.** The channel is built, signed and tested end to end, but
-> `updates.vspam.org` does not answer until the mirror and its DNS records go
-> up. Copy the file for now; nothing about it changes when the channel lands,
-> and `sa-update` will simply start keeping it current. Status is on
-> <https://vspam.org/integrations>.
-
 The channel is signed with **the same key as the apt and rpm repositories**,
 so if you already install `vspam-agent` from packages, this is a key you
 already trust. `sa-update` keeps its own keyring, so it still needs importing
 there once.
 
 ```bash
-curl -fsSL https://packages.vspam.org/rpm/RPM-GPG-KEY-vspam -o /tmp/vspam.key
+curl -fsSL https://packages.vspam.org/sa/GPG.KEY -o /tmp/vspam.key
 sa-update --import /tmp/vspam.key
 
-sa-update --channel updates.vspam.org --gpgkey <KEY_ID>
+sa-update --channel updates.vspam.org \
+  --gpgkey FFEFD35E128783663193F4499467859BE1C6CB21
 spamassassin --lint && systemctl reload spamassassin
 ```
 
-The URL says rpm but the file is a plain ASCII-armored public key, and it is
-the same key the apt repository publishes as
-`https://packages.vspam.org/apt/vspam-archive-keyring.gpg`. Use either.
+That is the same key the apt and rpm repositories publish, as
+`https://packages.vspam.org/apt/vspam-archive-keyring.gpg` and
+`https://packages.vspam.org/rpm/RPM-GPG-KEY-vspam`. Any of the three works.
 
-`<KEY_ID>` is the long key ID of that key, printed by the import, or:
+**`--gpgkey` wants the full 40-character fingerprint**, not the 16-character
+long key ID that most GPG tooling hands you. A short ID is accepted on the
+command line and then fails verification, so the error you get says
+`GPG validation failed` and looks like a compromised download rather than a
+mistyped argument. If you need to derive it rather than copy it from above:
 
 ```bash
-gpg --show-keys --with-colons /tmp/vspam.key | awk -F: '/^fpr:/{print substr($10,25); exit}'
+gpg --show-keys --with-colons /tmp/vspam.key | awk -F: '/^fpr:/{print $10; exit}'
+# FFEFD35E128783663193F4499467859BE1C6CB21
 ```
 
 Then add the same `--channel` and `--gpgkey` to whatever already runs
@@ -67,8 +67,7 @@ Then add the same `--channel` and `--gpgkey` to whatever already runs
 is not an error — the usual cron idiom is `sa-update ... && systemctl reload
 spamassassin`.
 
-The key ID and the current channel status are published on
-<https://vspam.org/integrations>. Updates are signed; `sa-update` refuses
+Updates are signed; `sa-update` refuses
 anything it cannot verify against the key you imported, and runs its own
 `--lint` on the rules before installing them.
 
