@@ -1,0 +1,85 @@
+vspam.org Threat Data License
+
+Copyright (C) 2026 vspam.org contributors
+
+The threat intelligence data published by vspam.org (IOC reports, threat
+feeds, STIX bundles, DNSBL zone files, CSV/JSON exports, API responses)
+is provided under the following terms:
+
+1. NON-COMMERCIAL USE — FREE
+
+   You may use, copy, and redistribute vspam.org threat data for
+   non-commercial purposes, including:
+
+   - Personal security research
+   - Academic research and publications
+   - Non-profit organizations
+   - Individual system administrators protecting their own infrastructure
+   - Open-source security tools (with attribution)
+
+   Attribution is required: "Data provided by vspam.org"
+
+2. COMMERCIAL USE — LICENSE REQUIRED
+
+   Commercial use of vspam.org threat data requires a paid license.
+   Commercial use includes, but is not limited to:
+
+   - Incorporating data into commercial products or services
+   - Reselling, redistributing, or repackaging the data
+   - Using data to provide paid security services to third parties
+   - Embedding data in commercial threat intelligence platforms
+   - Using data to train commercial AI/ML models
+
+   For commercial licensing, contact: licensing@vspam.org
+
+3. API ACCESS
+
+   The vspam.org API is free for personal and non-commercial use,
+   subject to rate limits. Commercial API access requires a paid
+   subscription.
+
+4. COMMUNITY CONTRIBUTIONS
+
+   By submitting reports, votes, or other data to vspam.org, you grant
+   vspam.org a perpetual, worldwide, royalty-free license to use,
+   distribute, and sublicense your contributions as part of the
+   vspam.org platform and data feeds.
+
+5. NO WARRANTY
+
+   THE DATA IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, ACCURACY, OR NON-INFRINGEMENT.
+   vspam.org makes no guarantees about the accuracy, completeness,
+   timeliness, or reliability of the data. Use of the data is at your
+   own risk. vspam.org shall not be liable for any damages arising from
+   the use or inability to use the data, including but not limited to
+   false positive listings, missed threats, or data inaccuracies.
+
+6. LIMITATION OF LIABILITY
+
+   In no event shall vspam.org, its operators (currently PlatOps
+   Security, LLC), contributors, or affiliates be liable for any
+   indirect, incidental, special, consequential, or punitive damages,
+   or any loss of profits, revenue, data, or business opportunities,
+   arising from or relating to this license or the use of the data.
+
+7. GOOD FAITH
+
+   vspam.org threat data is compiled in good faith from community
+   reports for the purpose of internet security. The presence of an
+   indicator in the database represents a community assessment and is
+   not a legal determination of wrongdoing by the listed party.
+
+8. GOVERNING LAW
+
+   This license is governed by the laws of the State of Delaware,
+   United States, without regard to conflict-of-law principles.
+
+9. OPERATOR
+
+   vspam.org is currently operated by PlatOps Security, LLC. The
+   operating entity will transition to a registered nonprofit
+   organization. Changes will be announced at https://vspam.org.
+
+For questions: licensing@vspam.org

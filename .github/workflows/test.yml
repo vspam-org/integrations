@@ -1,0 +1,43 @@
+name: Tests
+
+# Lives under integrations/ so that the subtree split which produces the public
+# mirror carries it to that repository's root. GitHub only reads workflows from
+# a repository root, so this file is inert here and active there.
+#
+# The suites run against real rspamd, real SpamAssassin and a real Debian under
+# systemd, so they need Docker and nothing else — which is the point. A
+# contributor's branch gets the same coverage the rules do.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rspamd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./rspamd/test/run-tests.sh
+
+  spamassassin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # --channel builds, signs and installs an sa-update channel with a
+      # throwaway key, so it covers the path operators actually use.
+      - run: ./spamassassin/test/run-tests.sh --channel
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install ansible-core ansible-lint
+      - run: ansible-galaxy collection install community.docker ansible.posix
+      - run: ansible-lint --offline playbook.yml roles/vspam_agent
+        working-directory: ansible
+      - run: ./ansible/test/run-tests.sh
