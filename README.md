@@ -4,8 +4,8 @@
 [![Tests](https://github.com/vspam-org/integrations/actions/workflows/test.yml/badge.svg)](https://github.com/vspam-org/integrations/actions/workflows/test.yml)
 
 Tested filter configuration for [vspam.org](https://vspam.org), a collaborative
-phishing and abuse blocklist for mail operators. The list is free, the data is
-CC0, and a delist request needs no account.
+phishing and abuse blocklist for mail operators. Querying the list is free, and
+a delist request needs no account.
 
 Every directory here has a test suite that runs against the real filter in
 Docker — not a mock. If you change something, run it.
@@ -83,6 +83,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
-Code **AGPL-3.0** ([LICENSE](LICENSE)). The blocklist data itself is **CC0**
-([LICENSE-DATA](LICENSE-DATA)) — public domain, use it for anything without
-asking. Those are deliberately different.
+Code **AGPL-3.0** ([LICENSE](LICENSE)). The blocklist data is free to use and
+redistribute for **non-commercial** purposes with attribution — "Data provided
+by vspam.org" — and commercial use needs a licence
+([LICENSE-DATA](LICENSE-DATA)). Those are deliberately different licences.
