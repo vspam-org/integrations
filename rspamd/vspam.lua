@@ -1,9 +1,11 @@
 --[[
 vspam.org community abuse intelligence for Rspamd.
 
-Install to $LOCAL_CONFDIR/plugins.d/vspam.lua (usually /etc/rspamd/plugins.d/)
-and configure in local.d/vspam.conf. The module stays disabled until that
-config file exists, so dropping the file in alone changes nothing.
+Install to $LOCAL_CONFDIR/plugins.d/vspam.lua (usually /etc/rspamd/plugins.d/).
+
+The module activates once rspamd.conf.local declares its section -- see the
+file of that name beside this one. It then runs on the defaults below even
+with no local.d/vspam.conf present; that file only overrides them.
 
 Two transports, in this order:
 
@@ -519,6 +521,12 @@ local function vspam_check(task)
     check_via_agent(task, iocs)
   elseif settings.fallback_to_api then
     check_via_api(task, iocs)
+  else
+    -- Agent in cooldown with no API fallback. Nothing was checked, and the
+    -- zero-weight symbol operators are told to watch is the only way they
+    -- find that out -- so it has to fire here too, not just on the message
+    -- that first hit the failure.
+    fail(task, 'agent unavailable')
   end
 end
 

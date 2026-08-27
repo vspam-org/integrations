@@ -86,12 +86,12 @@ write_msg mixed.eml spammy.example.net https://phish.example.net/login
 # --- helpers ----------------------------------------------------------------
 
 write_config() {
-  # $1 agent_url, $2 api_url
+  # $1 agent_url, $2 api_url, $3 fallback (default true), $4 cooldown (default 0)
   cat >"$WORK/local.d/vspam.conf" <<EOF
 agent_url = "$1";
 api_url = "$2";
-fallback_to_api = true;
-agent_cooldown = 0;
+fallback_to_api = ${3:-true};
+agent_cooldown = ${4:-0};
 timeout = 2.0;
 check_local = true;
 check_authed = true;
@@ -264,6 +264,22 @@ if grep -q '^Action: reject' <<<"$c_out"; then
 else
   printf '  ok   message still passes when both are down\n'; pass=$((pass + 1))
 fi
+
+# --- scenario D: agent down, no API fallback, cooldown engaged --------------
+#
+# Regression guard. The cooldown short-circuit used to skip the API branch and
+# fall out of the callback having inserted nothing at all, so for the whole
+# cooldown window the operator's only breakage signal — the zero-weight symbol
+# they are told to watch — vanished exactly when the lookup was broken.
+
+echo "scenario D: agent down, no fallback, cooldown engaged"
+write_config "http://127.0.0.1:9" "http://127.0.0.1:9" false 60
+start_rspamd
+# First scan trips the failure and arms the cooldown.
+scan phishing-sender.eml >/dev/null
+# Second scan takes the cooldown path, which must still report the outage.
+d_out="$(scan phishing-sender.eml)"
+check "cooldown still reports the outage" "$d_out" VSPAM_FAIL VSPAM_PHISHING
 
 # --- result -----------------------------------------------------------------
 

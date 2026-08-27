@@ -129,14 +129,18 @@ TARBALL="$OUT/$SERIAL.tar.gz"
 ( cd "$OUT" && sha512sum "$SERIAL.tar.gz" > "$SERIAL.tar.gz.sha512" )
 ( cd "$OUT" && sha256sum "$SERIAL.tar.gz" > "$SERIAL.tar.gz.sha256" )
 
+# Expanded with the +{...} guard below: "${GPG_ARGS[@]}" on an empty array is
+# an unbound-variable error under `set -u` on bash before 4.4, and macOS still
+# ships 3.2 — so signing would fail before it started, in the common case where
+# --gpg-homedir was not passed.
 GPG_ARGS=()
 [ -n "$GPG_HOMEDIR" ] && GPG_ARGS+=(--homedir "$GPG_HOMEDIR")
 
 if [ "$SIGN" = 1 ]; then
   rm -f "$TARBALL.asc"
-  gpg "${GPG_ARGS[@]}" --batch --yes --armor --local-user "$GPG_KEY" \
+  gpg ${GPG_ARGS[@]+"${GPG_ARGS[@]}"} --batch --yes --armor --local-user "$GPG_KEY" \
     --detach-sign --output "$TARBALL.asc" "$TARBALL"
-  gpg "${GPG_ARGS[@]}" --batch --yes --armor --export "$GPG_KEY" > "$OUT/GPG.KEY"
+  gpg ${GPG_ARGS[@]+"${GPG_ARGS[@]}"} --batch --yes --armor --export "$GPG_KEY" > "$OUT/GPG.KEY"
 else
   echo "warning: not signing; sa-update clients will reject this channel" >&2
 fi
