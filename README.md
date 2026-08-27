@@ -83,7 +83,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
-Code **AGPL-3.0** ([LICENSE](LICENSE)). The blocklist data is free to use and
-redistribute for **non-commercial** purposes with attribution — "Data provided
-by vspam.org" — and commercial use needs a licence
-([LICENSE-DATA](LICENSE-DATA)). Those are deliberately different licences.
+Code **AGPL-3.0** ([LICENSE](LICENSE)). The blocklist data is free to **query and act on** — commercially or not, no registration, no fee. **Redistributing** it (mirroring our zones, repackaging, reselling, embedding it in a product) needs a licence. Filtering your own mail
+costs nothing however much of it there is. See [LICENSE-DATA](LICENSE-DATA).

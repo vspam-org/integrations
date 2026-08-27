@@ -6,37 +6,50 @@ The threat intelligence data published by vspam.org (IOC reports, threat
 feeds, STIX bundles, DNSBL zone files, CSV/JSON exports, API responses)
 is provided under the following terms:
 
-1. NON-COMMERCIAL USE — FREE
+1. USING THE DATA — FREE
 
-   You may use, copy, and redistribute vspam.org threat data for
-   non-commercial purposes, including:
+   Querying vspam.org to make filtering decisions is free for everyone,
+   commercial or not, with no registration and no fee. That includes:
 
-   - Personal security research
-   - Academic research and publications
-   - Non-profit organizations
-   - Individual system administrators protecting their own infrastructure
-   - Open-source security tools (with attribution)
+   - DNSBL and RBL lookups against our zones
+   - API lookups
+   - Acting on the answers: blocking, scoring, quarantining, alerting
+   - Keeping a local cache of answers you queried, as the vspam.org
+     agent does, for as long as it is useful to you
 
-   Attribution is required: "Data provided by vspam.org"
+   No attribution is required to query the data or act on it. If you
+   would like to credit it anyway, "Data provided by vspam.org" is the
+   wording we use.
 
-2. COMMERCIAL USE — LICENSE REQUIRED
+   DNS queries are neither metered nor rate limited: we publish RPZ
+   zone files and receive no per-query telemetry, so there is nothing
+   on our side to count. API requests are rate limited, and the current
+   limits are published at https://vspam.org/api-docs.
 
-   Commercial use of vspam.org threat data requires a paid license.
-   Commercial use includes, but is not limited to:
+2. REDISTRIBUTING THE DATA — LICENSE REQUIRED
 
-   - Incorporating data into commercial products or services
-   - Reselling, redistributing, or repackaging the data
-   - Using data to provide paid security services to third parties
-   - Embedding data in commercial threat intelligence platforms
-   - Using data to train commercial AI/ML models
+   What needs a license is passing the data on rather than using it.
+   That includes:
 
-   For commercial licensing, contact: licensing@vspam.org
+   - Mirroring, republishing, or serving our zones or feeds to third
+     parties
+   - Repackaging or reselling the data, in whole or in substantial part
+   - Embedding it in a product or service you supply to others
+   - Bulk export for purposes other than your own filtering
+   - Training machine-learning models on it
 
-3. API ACCESS
+   The distinction is deliberate. Filtering your own mail, however much
+   of it there is and whether or not you are a business, costs nothing.
+   Building on top of our data to supply someone else is what funds the
+   list.
 
-   The vspam.org API is free for personal and non-commercial use,
-   subject to rate limits. Commercial API access requires a paid
-   subscription.
+   For a redistribution license, contact: licensing@vspam.org
+
+3. DELISTING
+
+   Anyone may request removal of an indicator at
+   https://vspam.org/delist without an account and without a fee.
+   Requests are reviewed by a person.
 
 4. COMMUNITY CONTRIBUTIONS
 

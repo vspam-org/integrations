@@ -80,6 +80,5 @@ personal data.
 ## Licence
 
 Code is **AGPL-3.0**; the blocklist data is under the separate terms in
-`LICENSE-DATA` — free for non-commercial use with attribution, commercial use
-by licence. By contributing you agree your contribution is licensed under the
-same terms.
+`LICENSE-DATA` — free to query and act on, licence needed to redistribute. By
+contributing you agree your contribution is licensed under the same terms.
