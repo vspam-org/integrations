@@ -24,9 +24,9 @@ de-duplication drop-in — see [Running both](#running-both).
 From your `mailcow-dockerized` directory:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/mailcow/rspamd/vspam.conf \
+curl -fsSL https://raw.githubusercontent.com/vspam-org/integrations/main/mailcow/rspamd/vspam.conf \
   -o data/conf/rspamd/local.d/rbl.conf
-curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/mailcow/scores.conf \
+curl -fsSL https://raw.githubusercontent.com/vspam-org/integrations/main/mailcow/scores.conf \
   -o data/conf/rspamd/local.d/groups.conf
 
 docker compose restart rspamd-mailcow
@@ -87,11 +87,11 @@ express. Full description: [`../rspamd/README.md`](../rspamd/README.md).
 mailcow mounts everything this needs already.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/rspamd/vspam.lua \
+curl -fsSL https://raw.githubusercontent.com/vspam-org/integrations/main/rspamd/vspam.lua \
   -o data/conf/rspamd/plugins.d/vspam.lua
 
 # Append — this file is shared with anything else you have configured.
-curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/rspamd/rspamd.conf.local \
+curl -fsSL https://raw.githubusercontent.com/vspam-org/integrations/main/rspamd/rspamd.conf.local \
   >> data/conf/rspamd/rspamd.conf.local
 
 cat > data/conf/rspamd/local.d/vspam.conf <<'EOF'

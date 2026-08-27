@@ -29,7 +29,7 @@ rest of your rules to add up against.
 ## Install
 
 Three files. From a checkout of this repository, or with `curl` from
-`https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/rspamd/`.
+`https://raw.githubusercontent.com/vspam-org/integrations/main/rspamd/`.
 
 ```bash
 # 1. The module itself.

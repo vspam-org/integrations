@@ -112,10 +112,10 @@ the agent with the health endpoint still answering afterwards.
 
 `KEEP=1 ./test/run-tests.sh` leaves the container up.
 
-## Why this is not in `deploy/ansible/`
+## Scope
 
-`deploy/ansible/` is vspam.org's own infrastructure — nginx, certbot, Postgres
-backups, an inventory naming our hosts. It is in the repo because the project
-is AGPL and hiding it would be worse, not because anyone else should run it.
-This role is a published artifact for other people's mail servers, so it lives
-with the other operator-facing integrations.
+This role installs the **agent** on your mail servers. It is not the playbook
+that runs vspam.org itself — that one provisions nginx, certbot and Postgres
+backups against our own hosts, and lives in the development repository where
+it belongs. Nothing here assumes anything about your infrastructure beyond a
+reachable host and a way to become root.

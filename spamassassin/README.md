@@ -22,7 +22,7 @@ defined twice.
 ### Copy the file
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/spamassassin/20_vspam.cf \
+curl -fsSL https://raw.githubusercontent.com/vspam-org/integrations/main/spamassassin/20_vspam.cf \
   -o /etc/spamassassin/20_vspam.cf
 
 spamassassin --lint && systemctl reload spamassassin

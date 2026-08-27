@@ -1,7 +1,7 @@
 # vspam.org community abuse intelligence for SpamAssassin.
 #
 # Install to /etc/spamassassin/20_vspam.cf, or let sa-update keep it current:
-#   https://github.com/vspam-org/vspam.org/tree/main/integrations/spamassassin
+#   https://github.com/vspam-org/integrations/tree/main/spamassassin
 #
 # Three surfaces are checked against dnsbl.vspam.org, each on its own:
 #
