@@ -33,6 +33,12 @@ Amavis, `spamd`, `spamass-milter` and rspamd-free mailcow all read
 
 ### Subscribe to the channel
 
+> **Not serving yet.** The channel is built, signed and tested end to end, but
+> `updates.vspam.org` does not answer until the mirror and its DNS records go
+> up. Copy the file for now; nothing about it changes when the channel lands,
+> and `sa-update` will simply start keeping it current. Status is on
+> <https://vspam.org/integrations>.
+
 The channel is signed with **the same key as the apt and rpm repositories**,
 so if you already install `vspam-agent` from packages, this is a key you
 already trust. `sa-update` keeps its own keyring, so it still needs importing
