@@ -1,5 +1,8 @@
 # vspam.org integrations
 
+[![protected by vspam.org](https://api.vspam.org/api/v1/badge/protected.svg)](https://vspam.org/)
+[![Tests](https://github.com/vspam-org/integrations/actions/workflows/test.yml/badge.svg)](https://github.com/vspam-org/integrations/actions/workflows/test.yml)
+
 Tested filter configuration for [vspam.org](https://vspam.org), a collaborative
 phishing and abuse blocklist for mail operators. The list is free, the data is
 CC0, and a delist request needs no account.
