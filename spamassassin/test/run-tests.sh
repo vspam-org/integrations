@@ -312,7 +312,11 @@ if [ "$WITH_CHANNEL" = 1 ]; then
     # not simply consider itself up to date and skip the download. A client
     # with GPG enabled never fetches the checksum files, so the detached
     # signature is what has to catch this.
-    printf 'corrupted\n' >>"$WORK/pub/$CHANNEL_SERIAL.tar.gz"
+    # Appended from inside the container that built it. The publisher runs as
+    # root in $SA with /pub mounted read-write, so on Linux the tarball is
+    # root-owned and the host user cannot touch it — which passes on a macOS
+    # bind mount, where writes are mapped to the calling user, and fails in CI.
+    docker exec "$SA" sh -c "printf 'corrupted\n' >> /pub/$CHANNEL_SERIAL.tar.gz"
     if docker exec "$SA" sh -c "rm -rf /tmp/upd2 && mkdir -p /tmp/upd2 && \
         sa-update -v --updatedir /tmp/upd2 \
           --channel updates.vspam.test --gpgkey $KEY_ID" \
