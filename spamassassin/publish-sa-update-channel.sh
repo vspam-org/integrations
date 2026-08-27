@@ -36,7 +36,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 
 RULES="$HERE/20_vspam.cf"
 CHANNEL="updates.vspam.org"
-MIRROR="https://updates.vspam.org/"
+MIRROR="https://packages.vspam.org/sa"
 SERIAL=""
 GPG_KEY=""
 GPG_HOMEDIR=""

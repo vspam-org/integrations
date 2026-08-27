@@ -150,11 +150,24 @@ will say so.
 
 ## Publishing the channel
 
-Maintainers only. `publish-sa-update-channel.sh` builds everything a client
-needs from `20_vspam.cf`:
+Maintainers only, and normally automated: `.github/workflows/spamassassin-channel.yml`
+builds, signs and uploads on a `sa-channel-v*` tag or from the Actions tab. It
+signs with the packaging key, lints the rules a client would install, and
+uploads everything except the DNS records — those are printed in the job
+summary, because they must go up only once the files are reachable.
+
+**The channel name is a DNS name, not a host.** `sa-update` looks up TXT
+records under `updates.vspam.org`; it downloads from whatever URL the
+`MIRRORED.BY` file names. The workflow serves the files from
+`packages.vspam.org/sa`, so there is one origin and one certificate to keep
+working, and `updates.vspam.org` needs no hosting at all — only two kinds of
+TXT record.
+
+To run it by hand:
 
 ```bash
-./publish-sa-update-channel.sh --gpg-key <KEY_ID> ./out
+./publish-sa-update-channel.sh --gpg-key <KEY_ID> \
+  --mirror https://packages.vspam.org/sa ./out
 ```
 
 It writes the tarball, its checksums, a detached signature, `MIRRORED.BY`, the
