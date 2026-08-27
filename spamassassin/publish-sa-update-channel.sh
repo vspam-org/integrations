@@ -21,6 +21,14 @@
 # -- fetches the .asc and never looks at the checksum files. The .sha512 and
 # .sha256 are published for clients run with --no-gpg and for anyone
 # verifying a download by hand; they are not what protects a normal client.
+#
+# Sign with the same key the apt and rpm repositories use -- the one in the
+# GPG_PRIVATE_KEY secret that agent-packages.yml imports. Operators who
+# already install vspam-agent from packages then have nothing new to trust,
+# and there is one fingerprint to rotate rather than two. The GPG.KEY this
+# writes is therefore byte-identical to the key already published at
+# packages.vspam.org; it is emitted beside the channel so SpamAssassin users
+# have a single URL.
 
 set -euo pipefail
 
@@ -40,7 +48,9 @@ SIGN=1
 SA_VERSIONS="3.4.4 3.4.5 3.4.6 4.0.0 4.0.1"
 
 usage() {
-  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  # Stops at the end of the numbered list; the notes below it are for whoever
+  # is editing this script, not for someone who typed --help.
+  sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
   cat <<EOF
 
 Options:
@@ -50,7 +60,8 @@ Options:
   --serial N          update serial; must increase (default: date +%Y%m%d%H)
   --sa-versions "A B" SpamAssassin versions to advertise
                       (default: $SA_VERSIONS)
-  --gpg-key ID        key to sign with; clients pass this to --gpgkey
+  --gpg-key ID        key to sign with; clients pass this to --gpgkey.
+                      Use the packaging key, not a channel-specific one.
   --gpg-homedir DIR   GnuPG home to sign from
   --no-sign           skip signing. Testing only: sa-update refuses an
                       unsigned channel unless the client passes --no-gpg,

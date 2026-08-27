@@ -33,12 +33,27 @@ Amavis, `spamd`, `spamass-milter` and rspamd-free mailcow all read
 
 ### Subscribe to the channel
 
+The channel is signed with **the same key as the apt and rpm repositories**,
+so if you already install `vspam-agent` from packages, this is a key you
+already trust. `sa-update` keeps its own keyring, so it still needs importing
+there once.
+
 ```bash
-curl -fsSL https://updates.vspam.org/GPG.KEY -o /tmp/vspam-GPG.KEY
-sa-update --import /tmp/vspam-GPG.KEY
+curl -fsSL https://packages.vspam.org/rpm/RPM-GPG-KEY-vspam -o /tmp/vspam.key
+sa-update --import /tmp/vspam.key
 
 sa-update --channel updates.vspam.org --gpgkey <KEY_ID>
 spamassassin --lint && systemctl reload spamassassin
+```
+
+The URL says rpm but the file is a plain ASCII-armored public key, and it is
+the same key the apt repository publishes as
+`https://packages.vspam.org/apt/vspam-archive-keyring.gpg`. Use either.
+
+`<KEY_ID>` is the long key ID of that key, printed by the import, or:
+
+```bash
+gpg --show-keys --with-colons /tmp/vspam.key | awk -F: '/^fpr:/{print substr($10,25); exit}'
 ```
 
 Then add the same `--channel` and `--gpgkey` to whatever already runs
