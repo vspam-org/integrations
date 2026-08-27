@@ -32,8 +32,9 @@ Three files. From a checkout of this repository, or with `curl` from
 `https://raw.githubusercontent.com/vspam-org/integrations/main/rspamd/`.
 
 ```bash
-# 1. The module itself.
-install -m 0644 vspam.lua /etc/rspamd/plugins.d/vspam.lua
+# 1. The module itself. -D creates plugins.d, which Rspamd reads
+#    (common.conf sets try_path for it) but the package does not create.
+install -D -m 0644 vspam.lua /etc/rspamd/plugins.d/vspam.lua
 
 # 2. Wire local.d/override.d for it. APPEND — do not overwrite; this file is
 #    shared with anything else you have configured at the top level.
