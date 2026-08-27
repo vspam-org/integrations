@@ -1,0 +1,26 @@
+---
+- name: Configure the vspam.org yum repository
+  ansible.builtin.yum_repository:
+    name: vspam
+    description: vspam.org packages
+    baseurl: "{{ vspam_agent_yum_baseurl }}"
+    gpgcheck: true
+    gpgkey: "{{ vspam_agent_yum_key_url }}"
+    enabled: true
+    state: present
+  when: vspam_agent_manage_repo
+
+- name: Import the vspam.org signing key
+  ansible.builtin.rpm_key:
+    key: "{{ vspam_agent_yum_key_url }}"
+    state: present
+  when: vspam_agent_manage_repo
+
+- name: Install vspam-agent
+  ansible.builtin.dnf:
+    name: >-
+      {{ vspam_agent_package_name }}{{
+        '' if vspam_agent_version == 'latest' else '-' ~ vspam_agent_version
+      }}
+    state: "{{ 'latest' if vspam_agent_version == 'latest' else 'present' }}"
+  notify: restart vspam-agent

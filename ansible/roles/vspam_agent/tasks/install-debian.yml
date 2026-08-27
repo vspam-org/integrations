@@ -1,0 +1,49 @@
+---
+- name: Ensure apt can fetch over HTTPS
+  ansible.builtin.apt:
+    name: [ca-certificates, gnupg]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure the vspam.org apt repository
+  when: vspam_agent_manage_repo
+  block:
+    - name: Ensure the keyring directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    # Kept ASCII-armored with a .asc suffix. apt reads an armored key from
+    # signed-by directly, so there is no gpg --dearmor step to go wrong and
+    # nothing to re-run when the key rotates.
+    - name: Install the vspam.org signing key
+      ansible.builtin.get_url:
+        url: "{{ vspam_agent_apt_key_url }}"
+        dest: /etc/apt/keyrings/vspam-archive-keyring.asc
+        owner: root
+        group: root
+        mode: "0644"
+      register: vspam_agent_key
+
+    - name: Add the vspam.org apt source
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [signed-by=/etc/apt/keyrings/vspam-archive-keyring.asc]
+          {{ vspam_agent_apt_repo_url }} {{ vspam_agent_apt_suite }} {{ vspam_agent_apt_component }}
+        filename: vspam
+        state: present
+        update_cache: true
+
+- name: Install vspam-agent
+  ansible.builtin.apt:
+    name: >-
+      {{ vspam_agent_package_name }}{{
+        '' if vspam_agent_version == 'latest' else '=' ~ vspam_agent_version
+      }}
+    state: "{{ 'latest' if vspam_agent_version == 'latest' else 'present' }}"
+    update_cache: "{{ vspam_agent_key is defined and vspam_agent_key is changed }}"
+  notify: restart vspam-agent

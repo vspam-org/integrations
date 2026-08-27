@@ -1,0 +1,32 @@
+---
+# Install the vspam.org agent across a mail server fleet.
+#
+#   ansible-playbook -i inventory.ini playbook.yml
+#
+# Nothing here touches Postfix until you say so — see the commented variable at
+# the bottom and read integrations/ansible/README.md first.
+
+- name: Install the vspam.org mail policy daemon
+  hosts: mailservers
+  become: true
+
+  roles:
+    - role: vspam_agent
+      vars:
+        # Optional. Raises your submission limits and attributes reports to
+        # your reporter profile. Keep it in a vault, not here:
+        #
+        #   ansible-vault encrypt_string --name vspam_agent_api_key 'vsk_...'
+        #
+        # vspam_agent_api_key: !vault |
+        #   $ANSIBLE_VAULT;1.1;AES256
+        #   ...
+
+        # A Unix socket is the usual choice on a single-host Postfix. Use the
+        # TCP default when Postfix runs chrooted or in another container.
+        # vspam_agent_listen: unix:///var/run/vspam/agent.sock
+
+        # Edits smtpd_recipient_restrictions and sets Postfix to fail open when
+        # the agent is unreachable. Off by default; see the README.
+        # vspam_agent_configure_postfix: true
+        vspam_agent_log_level: info

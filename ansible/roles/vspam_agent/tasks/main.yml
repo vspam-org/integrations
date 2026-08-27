@@ -1,0 +1,82 @@
+---
+- name: Assert the platform is one this role knows how to package for
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] in ['Debian', 'RedHat']
+    fail_msg: >-
+      vspam_agent supports Debian and RedHat families. On anything else, install
+      the static binary from https://vspam.org/download and use this role's
+      template and service tasks as a starting point.
+    quiet: true
+
+- name: Install the package repository and the agent
+  ansible.builtin.include_tasks: "install-{{ ansible_facts['os_family'] | lower }}.yml"
+  tags: [vspam_agent_install]
+
+- name: Ensure the config directory exists
+  ansible.builtin.file:
+    path: /etc/vspam
+    state: directory
+    owner: root
+    group: vspam
+    mode: "0750"
+
+# no_log because vspam_agent_api_key is rendered into it. The diff would
+# otherwise print the key to the console and into any Ansible log.
+- name: Write /etc/vspam/agent.yml
+  ansible.builtin.template:
+    src: agent.yml.j2
+    dest: /etc/vspam/agent.yml
+    owner: root
+    group: vspam
+    mode: "0640"
+    backup: true
+  no_log: true
+  notify: restart vspam-agent
+  tags: [vspam_agent_config]
+
+- name: Ensure vspam-agent is enabled and running
+  ansible.builtin.systemd_service:
+    name: vspam-agent
+    enabled: "{{ vspam_agent_service_enabled }}"
+    state: "{{ vspam_agent_service_state }}"
+    daemon_reload: true
+
+# Anything queued above runs now rather than at the end of the play, so the
+# verify step below tests the config we just wrote and Postfix is only pointed
+# at an agent that has already answered.
+- name: Apply pending restarts before verifying
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify the agent answers
+  when: vspam_agent_verify and vspam_agent_service_state == 'started'
+  tags: [vspam_agent_verify]
+  block:
+    - name: Wait for the policy socket to accept connections
+      ansible.builtin.wait_for:
+        host: "{{ vspam_agent_listen | regex_replace('^tcp://', '') | split(':') | first }}"
+        port: "{{ vspam_agent_listen | regex_replace('^tcp://', '') | split(':') | last | int }}"
+        timeout: "{{ vspam_agent_verify_retries * vspam_agent_verify_delay }}"
+      when: vspam_agent_listen.startswith('tcp://')
+
+    - name: Wait for the Unix policy socket to appear
+      ansible.builtin.wait_for:
+        path: "{{ vspam_agent_listen | regex_replace('^unix://', '') }}"
+        timeout: "{{ vspam_agent_verify_retries * vspam_agent_verify_delay }}"
+      when: vspam_agent_listen.startswith('unix://')
+
+    - name: Check the agent's health endpoint
+      ansible.builtin.uri:
+        url: "http://{{ vspam_agent_http_listen }}/health"
+        status_code: [200]
+      register: vspam_agent_health
+      retries: "{{ vspam_agent_verify_retries }}"
+      delay: "{{ vspam_agent_verify_delay }}"
+      until: vspam_agent_health is succeeded
+      when: vspam_agent_http_enabled
+      changed_when: false
+
+- name: Point Postfix at the agent
+  ansible.builtin.include_tasks: postfix.yml
+  when: vspam_agent_configure_postfix
+  tags: [vspam_agent_postfix]

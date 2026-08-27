@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: vspam_agent
+  namespace: vspam
+  author: vspam.org
+  description: Install and configure the vspam.org mail policy daemon on a mail server fleet
+  company: vspam.org
+  license: AGPL-3.0-or-later
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions: [bullseye, bookworm, trixie]
+    - name: Ubuntu
+      versions: [focal, jammy, noble]
+    - name: EL
+      versions: ["8", "9", "10"]
+  galaxy_tags:
+    - mail
+    - postfix
+    - security
+    - antispam
+    - phishing
+dependencies: []

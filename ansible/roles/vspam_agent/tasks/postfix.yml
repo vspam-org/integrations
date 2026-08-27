@@ -1,0 +1,66 @@
+---
+# Points Postfix at the agent, and — more importantly — makes the failure mode
+# survivable.
+#
+# Postfix ships smtpd_policy_service_default_action = "451 4.3.5 Server
+# configuration problem" and a 100s timeout. Left alone, a policy service that
+# is restarting, upgrading or wedged defers *every* inbound message, and does
+# it 100 seconds at a time. A blocklist that stops mail when it cannot be
+# reached is worse than no blocklist, so this sets DUNNO and a short timeout
+# before it adds the restriction that would depend on them.
+
+- name: Translate the agent's listen address into a Postfix policy endpoint
+  ansible.builtin.set_fact:
+    vspam_agent_postfix_endpoint: >-
+      {{
+        'inet:' ~ (vspam_agent_listen | regex_replace('^tcp://', ''))
+        if vspam_agent_listen.startswith('tcp://')
+        else 'unix:' ~ (vspam_agent_listen | regex_replace('^unix://', ''))
+      }}
+
+- name: Read the current restriction list
+  ansible.builtin.command: "postconf -h {{ vspam_agent_postfix_restriction_class }}"
+  register: vspam_agent_postfix_current
+  changed_when: false
+
+- name: Read the current policy-failure behaviour
+  ansible.builtin.command: >-
+    postconf -h smtpd_policy_service_default_action smtpd_policy_service_timeout
+  register: vspam_agent_postfix_failmode
+  changed_when: false
+
+- name: Fail open when the agent cannot be reached
+  ansible.builtin.command: >-
+    postconf -e
+    'smtpd_policy_service_default_action = DUNNO'
+    'smtpd_policy_service_timeout = 10s'
+  when: vspam_agent_postfix_failmode.stdout_lines | map('trim') | list != ['DUNNO', '10s']
+  changed_when: true
+  notify: reload postfix
+
+# Appended, never replaced: the existing list is the operator's spam policy and
+# the order in it is load-bearing. An empty list gets permit_mynetworks first so
+# that turning this on does not start policy-checking your own submissions.
+- name: Add the vspam.org policy service to the restriction list
+  ansible.builtin.command: >-
+    postconf -e
+    '{{ vspam_agent_postfix_restriction_class }} =
+    {{
+      (vspam_agent_postfix_current.stdout | trim ~ ', check_policy_service ' ~ vspam_agent_postfix_endpoint)
+      if (vspam_agent_postfix_current.stdout | trim | length > 0)
+      else ('permit_mynetworks, check_policy_service ' ~ vspam_agent_postfix_endpoint)
+    }}'
+  when: "'check_policy_service ' ~ vspam_agent_postfix_endpoint not in vspam_agent_postfix_current.stdout"
+  changed_when: true
+  notify: reload postfix
+
+- name: Report the resulting restriction list
+  ansible.builtin.command: "postconf -h {{ vspam_agent_postfix_restriction_class }}"
+  register: vspam_agent_postfix_result
+  changed_when: false
+
+- name: Show the resulting restriction list
+  ansible.builtin.debug:
+    msg: >-
+      {{ vspam_agent_postfix_restriction_class }} =
+      {{ vspam_agent_postfix_result.stdout | trim }}

@@ -1,0 +1,25 @@
+---
+- name: Restart vspam-agent
+  ansible.builtin.systemd_service:
+    name: vspam-agent
+    state: restarted
+  # A config change that stops the agent starting would otherwise take the
+  # policy service down with it; the verify step after this catches that.
+  listen: restart vspam-agent
+
+# `postfix reload` exits non-zero when Postfix is not running, which is the
+# normal state on a host where the package was just installed, or during a
+# maintenance window. Reloading is not needed there — Postfix reads main.cf on
+# start — so the role should not fail the play over it.
+- name: Check whether Postfix is running
+  ansible.builtin.command: postfix status
+  register: vspam_agent_postfix_running
+  changed_when: false
+  failed_when: false
+  listen: reload postfix
+
+- name: Reload postfix
+  ansible.builtin.command: postfix reload
+  when: vspam_agent_postfix_running.rc == 0
+  changed_when: true
+  listen: reload postfix

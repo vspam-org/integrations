@@ -1,0 +1,81 @@
+---
+# vspam-agent role defaults.
+#
+# Every value here is safe to run against a mail server that has never heard of
+# vspam.org: the agent is installed and started, and nothing else on the box is
+# touched until you opt in.
+
+# Package version. `latest` tracks the repo; pin a version string such as
+# "0.1.2" on a fleet you want to roll forward deliberately.
+vspam_agent_version: latest
+
+# Add the signed vspam.org package repository. Set to false if you mirror our
+# packages internally, and point vspam_agent_package_name at your own repo.
+vspam_agent_manage_repo: true
+vspam_agent_apt_repo_url: https://packages.vspam.org/apt
+vspam_agent_apt_suite: stable
+vspam_agent_apt_component: main
+vspam_agent_apt_key_url: https://packages.vspam.org/apt/vspam-archive-keyring.gpg
+vspam_agent_yum_baseurl: https://packages.vspam.org/rpm/el/$releasever/$basearch/
+vspam_agent_yum_key_url: https://packages.vspam.org/rpm/RPM-GPG-KEY-vspam
+vspam_agent_package_name: vspam-agent
+
+# --- agent.yml -------------------------------------------------------------
+# These map one-to-one onto /etc/vspam/agent.yml. The template writes only what
+# the agent understands, so an unknown key here is a typo, not an extension.
+
+vspam_agent_api_url: https://api.vspam.org
+
+# Optional. The agent works unauthenticated; a key raises your submission
+# limits and attributes reports to your reporter profile. Keep it in a vault:
+#
+#   ansible-vault encrypt_string --name vspam_agent_api_key 'vsk_...'
+#
+# The task that writes it is no_log, so it will not appear in output either way.
+vspam_agent_api_key: ""
+
+# Policy daemon socket. Postfix speaks to this.
+#   unix:///var/run/vspam/agent.sock   or   tcp://127.0.0.1:10045
+vspam_agent_listen: tcp://127.0.0.1:10045
+vspam_agent_socket_mode: "0660"
+
+# HTTP check API — for Exim, OpenSMTPD, Sendmail, Rspamd and scripts.
+# Enabled by default here, unlike the package, because it is also what the
+# verify step and any monitoring you add will talk to. Keep it on localhost.
+vspam_agent_http_enabled: true
+vspam_agent_http_listen: 127.0.0.1:10046
+
+vspam_agent_cache_ttl: 10m
+vspam_agent_cache_path: /var/lib/vspam/cache.db
+
+vspam_agent_dnsbl_enabled: true
+vspam_agent_dnsbl_zone: dnsbl.vspam.org
+
+vspam_agent_reject_message: "550 Message rejected: sender listed in vspam.org (phishing)"
+
+vspam_agent_reporting_enabled: true
+vspam_agent_queue_size: 1000
+
+vspam_agent_log_level: info
+
+# Anything not covered above, passed through verbatim to agent.yml. Use this
+# for a key the agent has grown since this role was last updated rather than
+# waiting on the role.
+vspam_agent_extra_config: {}
+
+# --- service ---------------------------------------------------------------
+vspam_agent_service_enabled: true
+vspam_agent_service_state: started
+
+# Wait for the agent to actually answer before the role reports success. This
+# is what makes the Postfix step below safe to run in the same play.
+vspam_agent_verify: true
+vspam_agent_verify_retries: 10
+vspam_agent_verify_delay: 2
+
+# --- Postfix ---------------------------------------------------------------
+# Off by default, deliberately. Editing smtpd_recipient_restrictions on a
+# running MTA is not something a role should do because it was installed.
+# Turn it on once you have read what it does in the README.
+vspam_agent_configure_postfix: false
+vspam_agent_postfix_restriction_class: smtpd_recipient_restrictions

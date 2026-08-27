@@ -1,0 +1,34 @@
+# {{ ansible_managed }}
+#
+# Managed by the vspam_agent Ansible role. Local edits are overwritten on the
+# next run; change the role variables instead. The previous file is kept as
+# agent.yml.<timestamp>~ when this one changes.
+#
+# Documentation: https://vspam.org/integrations
+
+api_url: {{ vspam_agent_api_url }}
+api_key: "{{ vspam_agent_api_key }}"
+
+listen: {{ vspam_agent_listen }}
+socket_mode: "{{ vspam_agent_socket_mode }}"
+
+http_enabled: {{ vspam_agent_http_enabled | bool | lower }}
+http_listen: {{ vspam_agent_http_listen }}
+
+cache_ttl: {{ vspam_agent_cache_ttl }}
+cache_path: {{ vspam_agent_cache_path }}
+
+dnsbl_enabled: {{ vspam_agent_dnsbl_enabled | bool | lower }}
+dnsbl_zone: {{ vspam_agent_dnsbl_zone }}
+
+reject_message: "{{ vspam_agent_reject_message }}"
+
+reporting_enabled: {{ vspam_agent_reporting_enabled | bool | lower }}
+queue_size: {{ vspam_agent_queue_size }}
+
+log_level: {{ vspam_agent_log_level }}
+{% if vspam_agent_extra_config %}
+
+# vspam_agent_extra_config
+{{ vspam_agent_extra_config | to_nice_yaml(indent=2) | trim }}
+{% endif %}
