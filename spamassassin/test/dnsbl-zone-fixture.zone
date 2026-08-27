@@ -1,0 +1,26 @@
+; A stand-in for dnsbl.vspam.org, served by CoreDNS during the tests so the
+; rules can be exercised without querying the real zone.
+;
+; RHSBL entries are the host itself; IP entries are the reversed quads.
+$ORIGIN dnsbl.vspam.org.
+$TTL 60
+@   IN SOA ns.dnsbl.vspam.org. hostmaster.dnsbl.vspam.org. ( 1 60 60 60 60 )
+@   IN NS  ns.dnsbl.vspam.org.
+ns  IN A   127.0.0.1
+
+; One host per return code.
+phish.example.net    IN A 127.0.0.2
+malware.example.net  IN A 127.0.0.3
+botnet.example.net   IN A 127.0.0.4
+spammy.example.net   IN A 127.0.0.5
+tornode.example.net  IN A 127.0.0.6
+weird.example.net    IN A 127.0.0.7
+
+; A listing on an exact host below a registered domain. If tflags notrim is
+; ever dropped from the URI rules, SpamAssassin asks shared.example.net
+; instead and this stops matching -- which is the regression to catch.
+evil-user.shared.example.net IN A 127.0.0.2
+
+; Reversed quads: 203.0.113.66 and 203.0.113.2
+66.113.0.203 IN A 127.0.0.5
+2.113.0.203  IN A 127.0.0.2

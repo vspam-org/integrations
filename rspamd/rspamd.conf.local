@@ -1,0 +1,18 @@
+# vspam.org module wiring.
+#
+# Append to: $LOCAL_CONFDIR/rspamd.conf.local  (usually /etc/rspamd/rspamd.conf.local)
+#
+# Rspamd only wires local.d and override.d automatically for modules it ships.
+# A third-party plugin needs this four-line section once, after which
+# local.d/vspam.conf and override.d/vspam.conf behave like any other module's.
+#
+# If you already have an rspamd.conf.local, append this block to it rather
+# than replacing the file — it is shared with everything else you have tuned.
+#
+# With no local.d/vspam.conf present the module still loads and runs on its
+# defaults: agent on 127.0.0.1:10046, falling back to the public API.
+
+vspam {
+  .include(try=true,priority=1,duplicate=merge) "$LOCAL_CONFDIR/local.d/vspam.conf"
+  .include(try=true,priority=10) "$LOCAL_CONFDIR/override.d/vspam.conf"
+}

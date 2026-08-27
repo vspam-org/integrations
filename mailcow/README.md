@@ -1,15 +1,21 @@
 # vspam.org on mailcow-dockerized
 
-Two independent paths. Start with the DNSBL — it needs no account, no agent, and
-no container, and you can have it running in about a minute.
+Three independent paths. Start with the DNSBL — it needs no account, no agent,
+and no container, and you can have it running in about a minute.
 
-| | DNSBL only | DNSBL + agent |
-|---|---|---|
-| API key needed | no | free key |
-| Extra container | no | one, ~4 MB |
-| Local caching | resolver's | BoltDB, 10 min TTL |
-| Reports what this server sees | no | yes |
-| Setup | 2 files | 3 files |
+| | DNSBL only | DNSBL + agent | Rspamd module |
+|---|---|---|---|
+| API key needed | no | free key | optional |
+| Extra container | no | one, ~4 MB | optional |
+| Local caching | resolver's | BoltDB, 10 min TTL | BoltDB, with the agent |
+| Checks the sender and connecting IP | yes | yes | yes |
+| **Checks links in the message body** | no | no | **yes** |
+| **Suspicious-but-not-listed verdict** | no | no | **yes** |
+| Reports what this server sees | no | yes | yes, with the agent |
+| Setup | 2 files | 3 files | 3 files |
+
+Paths 1 and 3 read the same data and must not be run together without the
+de-duplication drop-in — see [Running both](#running-both).
 
 ---
 
@@ -71,11 +77,73 @@ docker compose exec rspamd-mailcow \
 Keep the DNSBL config from Path 1 in place. Rspamd continues to score from DNS;
 the agent runs alongside it for caching and reporting.
 
+## Path 3 — the Rspamd module
+
+Replaces the DNS lookups with a native module. It checks links in the message
+body, which the DNSBL cannot do at all, and carries vspam.org's
+suspicious-but-not-listed verdict, which a DNS return code has no way to
+express. Full description: [`../rspamd/README.md`](../rspamd/README.md).
+
+mailcow mounts everything this needs already.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/rspamd/vspam.lua \
+  -o data/conf/rspamd/plugins.d/vspam.lua
+
+# Append — this file is shared with anything else you have configured.
+curl -fsSL https://raw.githubusercontent.com/vspam-org/vspam.org/main/integrations/rspamd/rspamd.conf.local \
+  >> data/conf/rspamd/rspamd.conf.local
+
+cat > data/conf/rspamd/local.d/vspam.conf <<'EOF'
+# Rspamd and the agent are separate containers here, so reach it by the
+# service alias the override file sets rather than on localhost.
+agent_url = "http://vspam-agent:10046";
+fallback_to_api = true;
+EOF
+
+docker compose exec rspamd-mailcow rspamadm configtest
+docker compose restart rspamd-mailcow
+```
+
+Weights are built into the module. To change them, take
+`../rspamd/local.d/groups.conf` and **merge** it into
+`data/conf/rspamd/local.d/groups.conf` — and set them all to `0.0` for the
+first week, as above.
+
+Without Path 2 the module falls back to the public API, sending only a SHA-256
+of each indicator. That works, but it is slower than a local cache and reports
+nothing back, so pair it with the agent once you are happy with it.
+
+### Running both
+
+Path 1 and Path 3 read the same listings, so running both scores every hit
+twice. Pick one. If you want both anyway — say you already had the DNSBL and
+are trying the module beside it — merge
+`../rspamd/local.d/composites.conf` into
+`data/conf/rspamd/local.d/composites.conf`, which collapses each duplicated
+pair back to a single weight while leaving both symbols visible in the history.
+
+### Tested against
+
+The module's test suite passes against mailcow's own Rspamd image
+(`ghcr.io/mailcow/rspamd:4.1.4-1`), covering each symbol, the API fallback, and
+fail-open behaviour when nothing is reachable. To run it against the image your
+deployment actually uses:
+
+```bash
+cd integrations/rspamd/test
+RSPAMD_IMAGE=ghcr.io/mailcow/rspamd:4.1.4-1 \
+RSPAMD_ENTRYPOINT=/usr/bin/rspamd \
+RSPAMD_ARGS="-f -u _rspamd -g _rspamd" ./run-tests.sh
+```
+
 ## Removing it
 
 ```bash
-rm data/conf/rspamd/local.d/rbl.conf data/conf/rspamd/local.d/groups.conf
-# and drop the vspam-agent block from docker-compose.override.yml
+rm -f data/conf/rspamd/local.d/rbl.conf data/conf/rspamd/local.d/groups.conf
+rm -f data/conf/rspamd/plugins.d/vspam.lua data/conf/rspamd/local.d/vspam.conf
+# and drop the vspam { } block from data/conf/rspamd/rspamd.conf.local
+# and the vspam-agent block from docker-compose.override.yml
 docker compose up -d && docker compose restart rspamd-mailcow
 ```
 

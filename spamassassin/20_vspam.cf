@@ -1,0 +1,197 @@
+# vspam.org community abuse intelligence for SpamAssassin.
+#
+# Install to /etc/spamassassin/20_vspam.cf, or let sa-update keep it current:
+#   https://github.com/vspam-org/vspam.org/tree/main/integrations/spamassassin
+#
+# Three surfaces are checked against dnsbl.vspam.org, each on its own:
+#
+#   the connecting IP        DNSEval, last external relay
+#   hostnames in the body    URIDNSBL, exact host
+#   the sender's domain      AskDNS, envelope and From header
+#
+# Every DNS lookup is a private __VSPAM_* rule with no score. Only the meta
+# rules at the bottom score, so a message listed on two surfaces at once is
+# counted once rather than three times.
+#
+# Return codes follow the published zone:
+#   127.0.0.2 phishing   127.0.0.3 malware   127.0.0.4 botnet
+#   127.0.0.5 spam       127.0.0.6 tor       127.0.0.7 threat
+
+###########################################################################
+# Connecting IP
+###########################################################################
+
+ifplugin Mail::SpamAssassin::Plugin::DNSEval
+
+header   __VSPAM_IP           eval:check_rbl('vspam-lastexternal', 'dnsbl.vspam.org.')
+describe __VSPAM_IP           Connecting IP listed on vspam.org
+tflags   __VSPAM_IP           net
+reuse    __VSPAM_IP
+
+header   __VSPAM_IP_PHISHING  eval:check_rbl_sub('vspam-lastexternal', '127.0.0.2')
+tflags   __VSPAM_IP_PHISHING  net
+reuse    __VSPAM_IP_PHISHING
+
+header   __VSPAM_IP_MALWARE   eval:check_rbl_sub('vspam-lastexternal', '127.0.0.3')
+tflags   __VSPAM_IP_MALWARE   net
+reuse    __VSPAM_IP_MALWARE
+
+header   __VSPAM_IP_BOTNET    eval:check_rbl_sub('vspam-lastexternal', '127.0.0.4')
+tflags   __VSPAM_IP_BOTNET    net
+reuse    __VSPAM_IP_BOTNET
+
+header   __VSPAM_IP_SPAM      eval:check_rbl_sub('vspam-lastexternal', '127.0.0.5')
+tflags   __VSPAM_IP_SPAM      net
+reuse    __VSPAM_IP_SPAM
+
+header   __VSPAM_IP_TOR       eval:check_rbl_sub('vspam-lastexternal', '127.0.0.6')
+tflags   __VSPAM_IP_TOR       net
+reuse    __VSPAM_IP_TOR
+
+header   __VSPAM_IP_THREAT    eval:check_rbl_sub('vspam-lastexternal', '127.0.0.7')
+tflags   __VSPAM_IP_THREAT    net
+reuse    __VSPAM_IP_THREAT
+
+endif # Mail::SpamAssassin::Plugin::DNSEval
+
+###########################################################################
+# Hostnames found in the message body
+#
+# tflags notrim is required. Without it SpamAssassin trims a hostname to its
+# registered domain before querying, so a listing for bad-user.github.io
+# would be asked as github.io — which is not what is listed, and would be a
+# false positive against the whole platform if it ever were.
+###########################################################################
+
+ifplugin Mail::SpamAssassin::Plugin::URIDNSBL
+
+urirhssub __VSPAM_URI_PHISHING dnsbl.vspam.org. A 127.0.0.2
+body      __VSPAM_URI_PHISHING eval:check_uridnsbl('__VSPAM_URI_PHISHING')
+tflags    __VSPAM_URI_PHISHING net notrim
+
+urirhssub __VSPAM_URI_MALWARE  dnsbl.vspam.org. A 127.0.0.3
+body      __VSPAM_URI_MALWARE  eval:check_uridnsbl('__VSPAM_URI_MALWARE')
+tflags    __VSPAM_URI_MALWARE  net notrim
+
+urirhssub __VSPAM_URI_BOTNET   dnsbl.vspam.org. A 127.0.0.4
+body      __VSPAM_URI_BOTNET   eval:check_uridnsbl('__VSPAM_URI_BOTNET')
+tflags    __VSPAM_URI_BOTNET   net notrim
+
+urirhssub __VSPAM_URI_SPAM     dnsbl.vspam.org. A 127.0.0.5
+body      __VSPAM_URI_SPAM     eval:check_uridnsbl('__VSPAM_URI_SPAM')
+tflags    __VSPAM_URI_SPAM     net notrim
+
+urirhssub __VSPAM_URI_TOR      dnsbl.vspam.org. A 127.0.0.6
+body      __VSPAM_URI_TOR      eval:check_uridnsbl('__VSPAM_URI_TOR')
+tflags    __VSPAM_URI_TOR      net notrim
+
+urirhssub __VSPAM_URI_THREAT   dnsbl.vspam.org. A 127.0.0.7
+body      __VSPAM_URI_THREAT   eval:check_uridnsbl('__VSPAM_URI_THREAT')
+tflags    __VSPAM_URI_THREAT   net notrim
+
+endif # Mail::SpamAssassin::Plugin::URIDNSBL
+
+###########################################################################
+# The sender's domain
+#
+# Both the envelope sender and the From header are asked, because a phishing
+# run routinely forges one and not the other. AskDNS issues one query per
+# distinct name, so the six rules per surface share a single lookup.
+###########################################################################
+
+ifplugin Mail::SpamAssassin::Plugin::AskDNS
+
+askdns __VSPAM_ENV_PHISHING _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.2$/
+tflags __VSPAM_ENV_PHISHING net
+askdns __VSPAM_ENV_MALWARE  _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.3$/
+tflags __VSPAM_ENV_MALWARE  net
+askdns __VSPAM_ENV_BOTNET   _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.4$/
+tflags __VSPAM_ENV_BOTNET   net
+askdns __VSPAM_ENV_SPAM     _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.5$/
+tflags __VSPAM_ENV_SPAM     net
+askdns __VSPAM_ENV_TOR      _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.6$/
+tflags __VSPAM_ENV_TOR      net
+askdns __VSPAM_ENV_THREAT   _SENDERDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.7$/
+tflags __VSPAM_ENV_THREAT   net
+
+askdns __VSPAM_HDR_PHISHING _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.2$/
+tflags __VSPAM_HDR_PHISHING net
+askdns __VSPAM_HDR_MALWARE  _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.3$/
+tflags __VSPAM_HDR_MALWARE  net
+askdns __VSPAM_HDR_BOTNET   _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.4$/
+tflags __VSPAM_HDR_BOTNET   net
+askdns __VSPAM_HDR_SPAM     _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.5$/
+tflags __VSPAM_HDR_SPAM     net
+askdns __VSPAM_HDR_TOR      _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.6$/
+tflags __VSPAM_HDR_TOR      net
+askdns __VSPAM_HDR_THREAT   _AUTHORDOMAIN_.dnsbl.vspam.org A /^127\.0\.0\.7$/
+tflags __VSPAM_HDR_THREAT   net
+
+endif # Mail::SpamAssassin::Plugin::AskDNS
+
+###########################################################################
+# Scored rules
+#
+# One per category, each firing on whichever surface saw it. Weights are the
+# Rspamd module's weights divided by three, because SpamAssassin's default
+# spam threshold is 5.0 where Rspamd's reject threshold is 15.0 — the same
+# proportion of the budget, so the two integrations agree about how much a
+# listing is worth.
+#
+# A phishing hit is therefore worth 2.0 against a threshold of 5.0: strong,
+# but not enough on its own. One list should rarely be the only reason a
+# message is refused.
+#
+# Start every score at 0 for the first week. The rules still appear in
+# X-Spam-Status so you can see exactly what would have happened.
+###########################################################################
+
+meta     VSPAM_PHISHING  (__VSPAM_IP_PHISHING || __VSPAM_URI_PHISHING || __VSPAM_ENV_PHISHING || __VSPAM_HDR_PHISHING)
+describe VSPAM_PHISHING  Listed on vspam.org as phishing
+tflags   VSPAM_PHISHING  net
+score    VSPAM_PHISHING  2.0
+
+meta     VSPAM_MALWARE   (__VSPAM_IP_MALWARE || __VSPAM_URI_MALWARE || __VSPAM_ENV_MALWARE || __VSPAM_HDR_MALWARE)
+describe VSPAM_MALWARE   Listed on vspam.org as malware distribution
+tflags   VSPAM_MALWARE   net
+score    VSPAM_MALWARE   2.0
+
+meta     VSPAM_BOTNET    (__VSPAM_IP_BOTNET || __VSPAM_URI_BOTNET || __VSPAM_ENV_BOTNET || __VSPAM_HDR_BOTNET)
+describe VSPAM_BOTNET    Listed on vspam.org as botnet command and control
+tflags   VSPAM_BOTNET    net
+score    VSPAM_BOTNET    1.7
+
+meta     VSPAM_SPAM      (__VSPAM_IP_SPAM || __VSPAM_URI_SPAM || __VSPAM_ENV_SPAM || __VSPAM_HDR_SPAM)
+describe VSPAM_SPAM      Listed on vspam.org as a spam source
+tflags   VSPAM_SPAM      net
+score    VSPAM_SPAM      1.0
+
+meta     VSPAM_THREAT    (__VSPAM_IP_THREAT || __VSPAM_URI_THREAT || __VSPAM_ENV_THREAT || __VSPAM_HDR_THREAT)
+describe VSPAM_THREAT    Listed on vspam.org as an aggregated threat indicator
+tflags   VSPAM_THREAT    net
+score    VSPAM_THREAT    0.7
+
+# Tor exit nodes are not evidence of abuse on their own; plenty of legitimate
+# mail leaves through one. Context, at a weight that says so.
+meta     VSPAM_TOR       (__VSPAM_IP_TOR || __VSPAM_URI_TOR || __VSPAM_ENV_TOR || __VSPAM_HDR_TOR)
+describe VSPAM_TOR       Listed on vspam.org as a Tor exit node
+tflags   VSPAM_TOR       net
+score    VSPAM_TOR       0.2
+
+# Two independent surfaces agreeing is worth more than either alone: the
+# sender's domain is listed *and* a link in the body is listed. Forging one
+# is routine, forging both means the message is what it looks like.
+meta   __VSPAM_SENDER_ANY (__VSPAM_ENV_PHISHING || __VSPAM_ENV_MALWARE || __VSPAM_ENV_BOTNET || __VSPAM_ENV_SPAM || __VSPAM_ENV_THREAT || __VSPAM_HDR_PHISHING || __VSPAM_HDR_MALWARE || __VSPAM_HDR_BOTNET || __VSPAM_HDR_SPAM || __VSPAM_HDR_THREAT)
+tflags __VSPAM_SENDER_ANY net
+
+meta   __VSPAM_URI_ANY    (__VSPAM_URI_PHISHING || __VSPAM_URI_MALWARE || __VSPAM_URI_BOTNET || __VSPAM_URI_SPAM || __VSPAM_URI_THREAT)
+tflags __VSPAM_URI_ANY    net
+
+meta     VSPAM_SENDER_AND_URI (__VSPAM_SENDER_ANY && __VSPAM_URI_ANY)
+describe VSPAM_SENDER_AND_URI Sender domain and a link in the body are both listed on vspam.org
+tflags   VSPAM_SENDER_AND_URI net
+score    VSPAM_SENDER_AND_URI 1.0
+
+# False positive? https://vspam.org/delist — reviewed by a human within 48
+# hours, no account needed, tracked publicly by ID. Check what is currently
+# held on a host first: https://vspam.org/lookup
